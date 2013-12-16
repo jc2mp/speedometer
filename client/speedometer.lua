@@ -187,7 +187,10 @@ function Speedometer:LocalPlayerChat( args )
 
     if msg == "/speedometer" or msg == "/speedo" then
         self:SetWindowOpen( not self:GetWindowOpen() )
+        return false
     end
+
+    return true
 end
 
 function Speedometer:LocalPlayerInput( args )
