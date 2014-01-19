@@ -204,7 +204,7 @@ function Speedometer:WindowClosed( args )
 end
 
 function Speedometer:ModulesLoad()
-    Events:FireRegisteredEvent( "HelpAddItem",
+    Events:Fire( "HelpAddItem",
         {
             name = "Speedometer",
             text = 
@@ -215,7 +215,7 @@ function Speedometer:ModulesLoad()
 end
 
 function Speedometer:ModuleUnload()
-    Events:FireRegisteredEvent( "HelpRemoveItem",
+    Events:Fire( "HelpRemoveItem",
         {
             name = "Speedometer"
         } )
