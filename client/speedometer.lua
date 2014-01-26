@@ -199,7 +199,10 @@ function Speedometer:Render()
         unit_position.y = speed_position.y + ((speed_size.y - unit_size.y) / 2)
         
         self:DrawShadowedText2( speed_position, speed_text, textcol, self.speed_text_size )
-        self:DrawShadowedText2( unit_position, unit_text, Color( 255, 255, 255, 255 ), self.unit_text_size )
+        self:DrawShadowedText2( unit_position,
+            unit_text,
+            Color( 255, 255, 255, 255 ),
+            self.unit_text_size )
 
         local bar_len = 300
         local bar_start = (Render.Width - bar_len) / 2
@@ -242,19 +245,20 @@ function Speedometer:Render()
         Render:SetTransform( t )
         
         self:DrawShadowedText3( Vector3( 0, 0, 0 ), speed_text, textcol, self.speed_text_size )
-        self:DrawShadowedText3( 
-                Vector3( speed_size.x + 24, (speed_size.y - unit_size.y)/2, 0), 
-                unit_text, Color( 255, 255, 255, 255 ), self.unit_text_size )
+        self:DrawShadowedText3( Vector3( speed_size.x + 24, (speed_size.y - unit_size.y)/2, 0), 
+            unit_text,
+            Color( 255, 255, 255, 255 ),
+            self.unit_text_size )
 
         local bar_pos = Vector3( 0, text_size.y + 4, 0 )
 
-        Render:FillArea( 
-            bar_pos, 
-            Vector3( text_size.x, 16, 0 ), Color( 0, 0, 0 ) )
+        Render:FillArea( bar_pos, 
+            Vector3( text_size.x, 16, 0 ),
+            Color( 0, 0, 0 ) )
 
-        Render:FillArea( 
-            bar_pos, 
-            Vector3( text_size.x * vehicle:GetHealth(), 16, 0 ), col )
+        Render:FillArea( bar_pos, 
+            Vector3( text_size.x * vehicle:GetHealth(), 16, 0 ),
+            col )
     end
 end
 
