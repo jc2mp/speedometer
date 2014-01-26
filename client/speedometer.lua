@@ -2,6 +2,7 @@ class 'Speedometer'
 
 function Speedometer:__init()
     self.enabled = true
+    self.bottom_aligned = false
     self.center_aligned = false
     self.unit = 1 -- 0: m/s 1: km/h 2: mph
     self.position = LocalPlayer:GetPosition()
@@ -24,7 +25,7 @@ function Speedometer:CreateSettings()
     self.window_open = false
 
     self.window = Window.Create()
-    self.window:SetSize( Vector2( 300, 100 ) )
+    self.window:SetSize( Vector2( 300, 120 ) )
     self.window:SetPosition( (Render.Size - self.window:GetSize())/2 )
 
     self.window:SetTitle( "Speedometer Settings" )
@@ -34,6 +35,9 @@ function Speedometer:CreateSettings()
     self.widgets = {}
 
     local enabled_checkbox = LabeledCheckBox.Create( self.window )
+    local bottom_checkbox = LabeledCheckBox.Create( self.window )
+    local center_checkbox = LabeledCheckBox.Create( self.window )
+
     enabled_checkbox:SetSize( Vector2( 300, 20 ) )
     enabled_checkbox:SetDock( GwenPosition.Top )
     enabled_checkbox:GetLabel():SetText( "Enabled" )
@@ -41,13 +45,41 @@ function Speedometer:CreateSettings()
     enabled_checkbox:GetCheckBox():Subscribe( "CheckChanged", 
         function() self.enabled = enabled_checkbox:GetCheckBox():GetChecked() end )
 
-    local center_checkbox = LabeledCheckBox.Create( self.window )
+    bottom_checkbox:SetSize( Vector2( 300, 20 ) )
+    bottom_checkbox:SetDock( GwenPosition.Top )
+    bottom_checkbox:GetLabel():SetText( "Bottom-Aligned" )
+    bottom_checkbox:GetCheckBox():SetChecked( self.bottom_aligned )
+    bottom_checkbox:GetCheckBox():Subscribe("CheckChanged", 
+        function()
+            self.bottom_aligned = bottom_checkbox:GetCheckBox():GetChecked()
+            
+            if self.bottom_aligned then
+                self.speed_text_size = TextSize.VeryLarge
+                self.unit_text_size = TextSize.Large
+            else
+                self.speed_text_size = TextSize.Gigantic
+                self.unit_text_size = TextSize.Huge
+            end
+            
+            if self.bottom_aligned then
+                center_checkbox:GetCheckBox():SetChecked(false)
+            end
+        end
+    )
+
     center_checkbox:SetSize( Vector2( 300, 20 ) )
     center_checkbox:SetDock( GwenPosition.Top )
     center_checkbox:GetLabel():SetText( "First-Person Centered" )
     center_checkbox:GetCheckBox():SetChecked( self.center_aligned )
     center_checkbox:GetCheckBox():Subscribe( "CheckChanged", 
-        function() self.center_aligned = center_checkbox:GetCheckBox():GetChecked() end )
+        function()
+            self.center_aligned = center_checkbox:GetCheckBox():GetChecked()
+            
+            if self.center_aligned then
+                bottom_checkbox:GetCheckBox():SetChecked(false)
+            end
+        end 
+    )
 
     local rbc = RadioButtonController.Create( self.window )
     rbc:SetSize( Vector2( 300, 20 ) )
@@ -102,7 +134,7 @@ function Speedometer:GetUnitString()
     end
 end
 
-function Speedometer:DrawShadowedText( pos, text, colour, size, scale )
+function Speedometer:DrawShadowedText3( pos, text, colour, size, scale )
     if scale == nil then scale = 1.0 end
     if size == nil then size = TextSize.Default end
 
@@ -110,6 +142,17 @@ function Speedometer:DrawShadowedText( pos, text, colour, size, scale )
     shadow_colour = shadow_colour * 0.4
 
     Render:DrawText( pos + Vector3( 1, 1, 0 ), text, shadow_colour, size, scale )
+    Render:DrawText( pos, text, colour, size, scale )
+end
+
+function Speedometer:DrawShadowedText2( pos, text, colour, size, scale )
+    if scale == nil then scale = 1.0 end
+    if size == nil then size = TextSize.Default end
+
+    local shadow_colour = Color( 0, 0, 0, 255 )
+    shadow_colour = shadow_colour * 0.4
+
+    Render:DrawText( pos + Vector2( 1, 1 ), text, shadow_colour, size, scale )
     Render:DrawText( pos, text, colour, size, scale )
 end
 
@@ -131,55 +174,88 @@ function Speedometer:Render()
     local unit_size = Render:GetTextSize( unit_text, self.unit_text_size )
     local angle = vehicle:GetAngle() * Angle( math.pi, 0, math.pi )
 
-    local text_size = speed_size + Vector2( unit_size.x + 24, 0 )
-
-    local t = Transform3()
-
-    if self.center_aligned then
-        local pos_3d = vehicle:GetPosition()
-        pos_3d.y = LocalPlayer:GetBonePosition( "ragdoll_Head" ).y
-
-        local scale = 1
-        
-        t:Translate( pos_3d )
-        t:Scale( 0.0050 * scale )
-        t:Rotate( angle )
-        t:Translate( Vector3( 0, 0, 2000 ) )
-        t:Translate( -Vector3( text_size.x, text_size.y, 0 )/2 )
-    else
-        local pos_3d = self.position
-        angle = angle * Angle( -math.rad(20), 0, 0 )
-
-        local scale = math.clamp( Camera:GetPosition():Distance( pos_3d ), 0, 500 )
-        scale = scale / 20
-        
-        t = Transform3()
-        t:Translate( pos_3d )
-        t:Scale( 0.0050 * scale )
-        t:Rotate( angle )
-        t:Translate( Vector3( text_size.x, text_size.y, -250 ) * -1.5 )
-    end
-
-    Render:SetTransform( t )
-
     local factor = math.clamp( vehicle:GetHealth() - 0.4, 0.0, 0.6 ) * 2.5
 
+    local textcol
     local col = math.lerp( self.zero_health, self.full_health, factor )
+    
+    if self.isBoosting then
+        textcol = Color(127, 195, 227)
+    else
+        textcol = col
+    end
+    
+    if self.bottom_aligned then
+        local text_size = speed_size + Vector2( unit_size.x + 16, 0 )
 
-    self:DrawShadowedText( Vector3( 0, 0, 0 ), speed_text, col, self.speed_text_size )
-    self:DrawShadowedText( 
-            Vector3( speed_size.x + 24, (speed_size.y - unit_size.y)/2, 0), 
-            unit_text, Color( 255, 255, 255, 255 ), self.unit_text_size )
+        local speed_position = Vector2(Render.Width / 2, Render.Height)
+        
+        speed_position.y = speed_position.y - (speed_size.y + 10)
+        speed_position.x = speed_position.x - (text_size.x / 2)
+        
+        local unit_position = Vector2()
+        
+        unit_position.x = speed_position.x + speed_size.x + 16
+        unit_position.y = speed_position.y + ((speed_size.y - unit_size.y) / 2)
+        
+        self:DrawShadowedText2( speed_position, speed_text, textcol, self.speed_text_size )
+        self:DrawShadowedText2( unit_position, unit_text, Color( 255, 255, 255, 255 ), self.unit_text_size )
 
-    local bar_pos = Vector3( 0, text_size.y + 4, 0 )
+        local bar_len = 300
+        local bar_start = (Render.Width - bar_len) / 2
+        
+        local bar_pos = Vector2( bar_start, speed_position.y + text_size.y)
+        local final_pos = Vector2(bar_len, 4)
+        
+        Render:FillArea( bar_pos, final_pos, Color( 0, 0, 0 ) )
+        Render:FillArea( bar_pos, Vector2(bar_len * vehicle:GetHealth(), 4), col)
+    else
+        local text_size = speed_size + Vector2( unit_size.x + 24, 0 )
 
-    Render:FillArea( 
-        bar_pos, 
-        Vector3( text_size.x, 16, 0 ), Color( 0, 0, 0 ) )
+        local t = Transform3()
 
-    Render:FillArea( 
-        bar_pos, 
-        Vector3( text_size.x * vehicle:GetHealth(), 16, 0 ), col )
+        if self.center_aligned then
+            local pos_3d = vehicle:GetPosition()
+            pos_3d.y = LocalPlayer:GetBonePosition( "ragdoll_Head" ).y
+
+            local scale = 1
+            
+            t:Translate( pos_3d )
+            t:Scale( 0.0050 * scale )
+            t:Rotate( angle )
+            t:Translate( Vector3( 0, 0, 2000 ) )
+            t:Translate( -Vector3( text_size.x, text_size.y, 0 )/2 )
+        else
+            local pos_3d = self.position
+            angle = angle * Angle( -math.rad(20), 0, 0 )
+
+            local scale = math.clamp( Camera:GetPosition():Distance( pos_3d ), 0, 500 )
+            scale = scale / 20
+            
+            t = Transform3()
+            t:Translate( pos_3d )
+            t:Scale( 0.0050 * scale )
+            t:Rotate( angle )
+            t:Translate( Vector3( text_size.x, text_size.y, -250 ) * -1.5 )
+        end
+
+        Render:SetTransform( t )
+        
+        self:DrawShadowedText3( Vector3( 0, 0, 0 ), speed_text, textcol, self.speed_text_size )
+        self:DrawShadowedText3( 
+                Vector3( speed_size.x + 24, (speed_size.y - unit_size.y)/2, 0), 
+                unit_text, Color( 255, 255, 255, 255 ), self.unit_text_size )
+
+        local bar_pos = Vector3( 0, text_size.y + 4, 0 )
+
+        Render:FillArea( 
+            bar_pos, 
+            Vector3( text_size.x, 16, 0 ), Color( 0, 0, 0 ) )
+
+        Render:FillArea( 
+            bar_pos, 
+            Vector3( text_size.x * vehicle:GetHealth(), 16, 0 ), col )
+    end
 end
 
 function Speedometer:LocalPlayerChat( args )
