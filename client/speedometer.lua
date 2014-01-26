@@ -175,16 +175,8 @@ function Speedometer:Render()
     local angle = vehicle:GetAngle() * Angle( math.pi, 0, math.pi )
 
     local factor = math.clamp( vehicle:GetHealth() - 0.4, 0.0, 0.6 ) * 2.5
-
-    local textcol
     local col = math.lerp( self.zero_health, self.full_health, factor )
-    
-    if self.isBoosting then
-        textcol = Color(127, 195, 227)
-    else
-        textcol = col
-    end
-    
+	
     if self.bottom_aligned then
         local text_size = speed_size + Vector2( unit_size.x + 16, 0 )
 
@@ -198,7 +190,7 @@ function Speedometer:Render()
         unit_position.x = speed_position.x + speed_size.x + 16
         unit_position.y = speed_position.y + ((speed_size.y - unit_size.y) / 2)
         
-        self:DrawShadowedText2( speed_position, speed_text, textcol, self.speed_text_size )
+        self:DrawShadowedText2( speed_position, speed_text, col, self.speed_text_size )
         self:DrawShadowedText2( unit_position,
             unit_text,
             Color( 255, 255, 255, 255 ),
@@ -244,7 +236,7 @@ function Speedometer:Render()
 
         Render:SetTransform( t )
         
-        self:DrawShadowedText3( Vector3( 0, 0, 0 ), speed_text, textcol, self.speed_text_size )
+        self:DrawShadowedText3( Vector3( 0, 0, 0 ), speed_text, col, self.speed_text_size )
         self:DrawShadowedText3( Vector3( speed_size.x + 24, (speed_size.y - unit_size.y)/2, 0), 
             unit_text,
             Color( 255, 255, 255, 255 ),
