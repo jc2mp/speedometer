@@ -14,7 +14,7 @@ function Speedometer:__init()
     self.full_health        = Color( 55,  204, 73 ) -- Full health colour
 
     Events:Subscribe( "PreTick", self, self.PreTick )
-    Events:Subscribe( "Render", self, self.Render )
+    Events:Subscribe( "GameRender", self, self.GameRender )
     Events:Subscribe( "LocalPlayerChat", self, self.LocalPlayerChat )
     Events:Subscribe( "LocalPlayerInput", self, self.LocalPlayerInput )
     Events:Subscribe( "ModulesLoad", self, self.ModulesLoad )
@@ -160,7 +160,7 @@ function Speedometer:PreTick()
     self.position = LocalPlayer:GetPosition()
 end
 
-function Speedometer:Render()
+function Speedometer:GameRender()
     if Game:GetState() ~= GUIState.Game or not self.enabled then return end
     if not LocalPlayer:InVehicle() then return end
 
